@@ -17,6 +17,19 @@ This module expects the following inputs under the `ssh_login_notification` name
 - `mailfrom`: Sender email address.
 - `mailto`: Recipient email address.
 
+```json
+{
+  "variables": {
+    "ssh_login_notification:ssh_login_notification.mailfrom": {
+      "value": "sender@example.com"
+    },
+    "ssh_login_notification:ssh_login_notification.mailto": {
+      "value": "security@example.com"
+    }
+  }
+}
+```
+
 ## Usage
 
 Add the module to your CFEngine Build System (`cfbs`) project and provide inputs:
