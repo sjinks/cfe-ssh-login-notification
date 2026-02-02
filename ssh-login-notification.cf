@@ -1,0 +1,50 @@
+body file control
+{
+  namespace => "ssh_login_notification";
+}
+
+bundle agent ssh_login_notification
+{
+  vars:
+
+    any::
+      "pam_sshd"           string => "/etc/pam.d/sshd";
+      "ssh_login_notifier" string => "/usr/local/sbin/ssh-login-notifier";
+      "pam_string"         string => "session optional pam_exec.so $(ssh_login_notifier)";
+      "mailfrom"           string => "$(def.mailfrom)";
+      "mailto"             string => "$(def.mailto)";
+
+
+  classes:
+
+    any::
+      "pam_sshd_exists" and => { fileexists("$(pam_sshd)") };
+
+
+  packages:
+
+    pam_sshd_exists.debian::
+      "mailutils"
+        policy  => "present",
+        comment => "Ensure mailutils is installed for email notifications.";
+      "libpam-modules"
+        policy  => "present",
+        comment => "Ensure libpam-modules is installed for PAM support.";
+
+
+  files:
+
+    pam_sshd_exists::
+      "$(ssh_login_notifier)"
+        create          => "true",
+        template_method => "mustache",
+        template_data   => parsejson('{ "mailfrom": "$(mailfrom)", "mailto": "$(mailto)" }'),
+        edit_template   => "$(sys.inputdir)/templates/ssh-login-notification/ssh-login-notifier.mustache",
+        perms           => mog("0750", "root", "root"),
+        comment         => "Install ssh-login-notifier script";
+
+      "$(pam_sshd)"
+        handle    => "ssh_login_notification_pam_sshd",
+        edit_line => lines_present("$(pam_string)"),
+        comment   => "Ensure PAM is configured to use ssh-login-notifier";
+}

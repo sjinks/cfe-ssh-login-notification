@@ -1,0 +1,43 @@
+#!/bin/sh
+
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+
+MAILFROM="{{{mailfrom}}}"
+MAILTO="{{{mailto}}}"
+
+if [ -z "${PAM_TYPE}" ] || [ -z "${PAM_USER}" ] || [ -z "${PAM_SERVICE}" ]; then
+    echo "Missing PAM environment variables."
+    exit 1
+fi
+
+if [ "${PAM_TYPE}" != "open_session" ]; then
+    exit 0
+fi
+
+SUBJECT="User ${PAM_USER} from ${PAM_RHOST} logged in via ${PAM_SERVICE} to $(hostname)"
+if [ -n "${SSH_CONNECTION}" ] && [ -n "${SSH_AUTH_INFO_0}" ]; then
+    FROM="$(echo "${SSH_CONNECTION}" | cut -d ' ' -f 1):$(echo "${SSH_CONNECTION}" | cut -d ' ' -f 2)"
+    AUTH="Authentication: ${SSH_AUTH_INFO_0}"
+else
+    FROM="${PAM_RHOST}"
+    AUTH="Authentication info not available"
+fi
+
+if [ -r /var/log/auth.log ]; then
+    LOGFILE="/var/log/auth.log"
+elif [ -r /var/log/secure ]; then
+    LOGFILE="/var/log/secure"
+else
+    LOGFILE=""
+fi
+
+if [ -z "${LOGFILE}" ]; then
+    LOG_CONTENT="Log file not found."
+else
+    LOG_CONTENT=$(tail -n 10 "${LOGFILE}")
+fi
+
+BODY="$(printf "User: %s\nFrom: %s\nService: %s\n%s\n\nRecent log entries:\n%s\n" "${PAM_USER}" "${FROM}" "${PAM_SERVICE}" "${AUTH}" "${LOG_CONTENT}")"
+
+echo "${BODY}" | mailx -r "${MAILFROM}" -s "${SUBJECT}" "${MAILTO}"
+exit 0

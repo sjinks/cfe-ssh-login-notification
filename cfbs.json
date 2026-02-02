@@ -1,0 +1,37 @@
+{
+  "name": "ssh-login-notification",
+  "description": "Configures SSH login notifications",
+  "type": "module",
+  "provides": {
+    "ssh-login-notification": {
+      "description": "Configures SSH login notifications via email",
+      "tags": ["security"],
+      "version": "1.0.0",
+      "input": [
+        {
+          "type": "string",
+          "namespace": "ssh_login_notification",
+          "bundle": "ssh_login_notification",
+          "variable": "mailfrom",
+          "label": "Sender email address",
+          "question": "Enter the email address that will appear as the sender of the SSH login notifications."
+        },
+        {
+          "type": "string",
+          "namespace": "ssh_login_notification",
+          "bundle": "ssh_login_notification",
+          "variable": "mailto",
+          "label": "Recipient email address",
+          "question": "Enter the email address that will receive the SSH login notifications."
+        }
+      ],
+      "steps": [
+        "copy ssh-login-notification.cf services/cfbs/modules/ssh-login-notification/ssh-login-notification.cf",
+        "copy ssh-login-notifier.mustache templates/ssh-login-notification/ssh-login-notifier.mustache",
+        "input ssh-login-notification/input.json def.json",
+        "bundles ssh_login_notification:ssh_login_notification",
+        "policy_files services/cfbs/modules/ssh-login-notification/ssh-login-notification.cf"
+      ]
+    }
+  }
+}
