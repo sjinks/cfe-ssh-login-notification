@@ -14,9 +14,11 @@ if [ "${PAM_TYPE}" != "open_session" ]; then
     exit 0
 fi
 
+: "${PAM_RHOST:=}"
+
 SUBJECT="User ${PAM_USER} from ${PAM_RHOST} logged in via ${PAM_SERVICE} to $(hostname)"
 if [ -n "${SSH_CONNECTION}" ] && [ -n "${SSH_AUTH_INFO_0}" ]; then
-    FROM="$(echo "${SSH_CONNECTION}" | cut -d ' ' -f 1):$(echo "${SSH_CONNECTION}" | cut -d ' ' -f 2)"
+    FROM="$(echo "${SSH_CONNECTION}" | cut -d ' ' -f 1 || true):$(echo "${SSH_CONNECTION}" | cut -d ' ' -f 2)"
     AUTH="Authentication: ${SSH_AUTH_INFO_0}"
 else
     FROM="${PAM_RHOST}"
